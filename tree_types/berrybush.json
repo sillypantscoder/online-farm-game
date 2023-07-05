@@ -1,0 +1,25 @@
+{
+	"start": "leaves",
+	"night": [
+		{"type": "repeat", "len": 2, "commands": [
+			{"type": "getblock", "block": "leaves"},
+			{"type": "choice", "commands": [
+				[
+					{"type": "move", "x": 0, "y": -1}
+				],
+				[
+					{"type": "growpos"}
+				],
+				[
+					{"type": "move", "x": 0, "y": -1},
+					{"type": "growpos"}
+				]
+			]},
+			{"type": "set", "force": false, "block": "leaves"}
+		]},
+		{"type": "foreach", "block": "leaves", "commands": [
+			{"type": "growpos"},
+			{"type": "set", "force": false, "block": "berry"}
+		]}
+	]
+}

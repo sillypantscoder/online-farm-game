@@ -41,7 +41,8 @@ class Player:
 		self.money = 0
 		self.inventory = {
 			"apple": 1,
-			"water": 1
+			"water": 1,
+			"berry": 0
 		}
 		self.trees = [
 			Tree("default")
@@ -108,10 +109,9 @@ def executeCommandSet(grid: Grid, cmds, pos: tuple[int, int] | None = (0, 0)) ->
 			if (not cmd["force"]) and grid.get_at(pos) != None:
 				continue
 			grid.set_at(pos, cmd["block"])
-		elif cmd["type"] == "half":
-			# 1/2 chance of doing {commands}
-			if random.choice([True, False]):
-				pos = executeCommandSet(grid, cmd["commands"], pos)
+		elif cmd["type"] == "choice":
+			# Randomly do a command set from {commands}
+			pos = executeCommandSet(grid, random.choice(cmd["commands"]), pos)
 		elif cmd["type"] == "foreach":
 			# For each {block} run {commands}
 			filledblocks = [[x, y] for y in range(grid.get_height()) for x in range(grid.get_width()) if grid.get_at([x, y]) == cmd["block"]]
@@ -132,7 +132,8 @@ prices = {
 	"leaves": 1,
 	"blossom": 1,
 	"apple": 2,
-	"water": 4
+	"water": 4,
+	"berry": 2
 }
 
 # SERVER
@@ -255,6 +256,30 @@ def post(path: str, body: bytes) -> HttpResponse:
 				p.money -= cost
 				if bodydata[1] not in p.inventory.keys(): p.inventory[bodydata[1]] = 0
 				p.inventory[bodydata[1]] += int(bodydata[2])
+		return {
+			"status": 200,
+			"headers": {},
+			"content": f""
+		}
+	elif path == "/newplant":
+		bodydata = body.decode("UTF-8").split("\n")
+		treetype = "default"
+		if bodydata[1] == "apple-tree": treetype = random.choices(
+					["default", "geometric"],
+			weights=[1        , 10         ],
+		k=1)[0]
+		elif bodydata[1] == "berry-bush": treetype = random.choices(
+					["berrybush"],
+			weights=[1          ],
+		k=1)[0]
+		for p in players:
+			if p.name == bodydata[0]:
+				cost = "wood"
+				if bodydata[1] == "berry-bush": cost = "berry"
+				if cost not in p.inventory.keys(): continue;
+				if p.inventory[cost] < 1: continue;
+				p.inventory[cost] -= 1
+				p.trees.append(Tree(treetype))
 		return {
 			"status": 200,
 			"headers": {},
