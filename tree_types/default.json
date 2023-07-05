@@ -1,0 +1,26 @@
+{
+	"start": "wood",
+	"night": [
+		{"type": "repeat", "len": 3, "commands": [
+			{"type": "getblock", "block": "wood"},
+			{"type": "growpos"},
+			{"type": "set", "force": false, "block": "wood"}
+		]},
+		{"type": "repeat", "len": 2, "commands": [
+			{"type": "getblock", "block": "wood"},
+			{"type": "growpos"},
+			{"type": "set", "force": false, "block": "leaves"}
+		]},
+		{"type": "half", "commands": [
+			{"type": "half", "commands": [
+				{"type": "half", "commands": [
+					{"type": "getblock", "block": "blossom"},
+					{"type": "set", "force": true, "block": "apple"}
+				]}
+			]},
+			{"type": "getblock", "block": "wood"},
+			{"type": "growpos"},
+			{"type": "set", "force": false, "block": "blossom"}
+		]}
+	]
+}

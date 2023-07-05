@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+.inactive[data-tab] {
+	display: none;
+}
+
+.tabs {
+	padding-top: 1em;
+	display: flex;
+	flex-direction: row;
+	border-bottom: 2px solid #666;
+	margin-bottom: 1em;
+}
+.tab {
+	position: relative;
+	bottom: -2px;
+}
+.tab {
+	background: #AAA;
+	display: inline-block;
+	border: 2px solid #666;
+	padding: 1em;
+	margin-left: 1em;
+	color: black;
+	text-decoration: none;
+}
+.tab.selected, .tab:hover {
+	background: #DDD;
+}
+.tab.selected {
+	border-bottom: 2px solid #DDD;
+}
+
+.grid {
+	display: flex;
+	flex-direction: column;
+}
+.grid > div {
+	display: flex;
+	flex-direction: row;
+}
+.grid > div > div {
+	width: 1em;
+	height: 1em;
+	border: 1px solid black;
+	/* background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'><rect x='0' y='0' width='1' height='1' fill='rgb(255, 0, 255)' /><rect x='1' y='0' width='1' height='1' fill='rgb(0, 0, 0)' /><rect x='0' y='1' width='1' height='1' fill='rgb(0, 0, 0)' /><rect x='1' y='1' width='1' height='1' fill='rgb(255, 0, 255)' /></svg>"); */
+}
+.cell-null {
+	background: none;
+}
+.cell-wood {
+	background: rgb(150, 70, 20);
+}
+.cell-leaves {
+	background: rgb(60, 120, 60);
+}
+.cell-blossom {
+	background: rgb(110, 0, 110);
+}
+.cell-apple {
+	background: rgb(200, 0, 0);
+}
+		</style>
+	</head>
+	<body>
+		<div class="tabs">
+			<div class="tab" onclick="tab(this, this.innerText)">Shop</div>
+		</div>
+		<div data-tab="Shop">
+			<div>You have <b id="money">$0</b></div>
+			<div><button onclick="night()">Night (Costs: 1 apple, <span id="nightcost">0</span> water)</button></div>
+			<div>
+				<div>Inventory:</div>
+				<ul id="inventory"></ul>
+			</div>
+			<hr>
+			<div>Shop:</div>
+			<div id="shop"></div>
+		</div>
+		<script>
+var username = decodeURIComponent(location.search.substr(1))
+function tab(e, n) {
+	document.querySelectorAll(`*[data-tab]`).forEach((e) => e.classList.add('inactive'))
+	document.querySelector(`*[data-tab="${n}"]`).classList.remove('inactive')
+	document.querySelectorAll(`.tab`).forEach((e) => e.classList.remove('selected'))
+	e.classList.add('selected')
+}
+function update() {
+	var x = new XMLHttpRequest()
+	x.open("GET", "/userdata/" + username)
+	x.addEventListener("loadend", (e) => {
+		var pd = JSON.parse(e.target.responseText)
+		// Money
+		document.querySelector("#money").innerText = "$" + pd.money
+		// Trees (if needed)
+		if (document.querySelectorAll(".tree-tab").length != pd.trees.length) {
+			updateTrees()
+			document.querySelector("#nightcost").innerText = pd.trees.length
+		}
+		// Inventory
+		document.querySelectorAll("#inventory > *").forEach((e) => e.remove())
+		var ikeys = Object.keys(pd.inventory)
+		for (var i = 0; i < ikeys.length; i++) {
+			var e = document.createElement("li")
+			e.innerText = `${ikeys[i]}: ${pd.inventory[ikeys[i]]}`
+			document.querySelector("#inventory").appendChild(e)
+		}
+	})
+	x.send()
+}
+function updateTrees() {
+	var x = new XMLHttpRequest()
+	x.open("GET", "/userdata/" + username)
+	x.addEventListener("loadend", (e) => {
+		var pd = JSON.parse(e.target.responseText)
+		document.querySelector("#money").innerText = "$" + pd.money
+		document.querySelectorAll(".tree-tab, .tree-screen").forEach((e) => e.remove())
+		for (var i = 0; i < pd.trees.length; i++) {
+			var e = document.createElement("div")
+			e.classList.add("tab")
+			e.classList.add("tree-tab")
+			e.setAttribute("onclick", `tab(this, 'tree${i}')`)
+			e.innerText = `${i + 1} - Tree`
+			document.querySelector(".tabs").appendChild(e)
+			var e = document.createElement("div")
+			e.classList.add("inactive")
+			e.classList.add("tree-screen")
+			e.dataset.tab = `tree${i}`
+			e.appendChild(buildTreeElement(i, pd.trees[i]))
+			e.appendChild(document.createElement("div"))
+			e.children[1].innerHTML = `<button onclick="destroyTree(${i})">Destroy tree</button>`
+			document.body.appendChild(e)
+		}
+	})
+	x.send()
+}
+function buildTreeElement(treeno, grid) {
+	var e = document.createElement("div")
+	e.classList.add("grid")
+	for (var y = 0; y < grid.length; y++) {
+		var row = document.createElement("div")
+		for (var x = 0; x < grid[y].length; x++) {
+			var cell = document.createElement("div")
+			cell.classList.add(`cell-${grid[y][x]}`)
+			cell.setAttribute("onclick", `take(${treeno}, ${x}, ${y})`)
+			row.appendChild(cell)
+		}
+		e.appendChild(row)
+	}
+	return e
+}
+function night() {
+	var x = new XMLHttpRequest()
+	x.open("POST", "/night")
+	x.addEventListener("loadend", (e) => {
+		setTimeout(() => {
+			update()
+			updateTrees()
+		}, 100)
+	})
+	x.send()
+}
+function take(treeno, x, y) {
+	var r = new XMLHttpRequest()
+	r.open("POST", "/take")
+	r.addEventListener("loadend", (e) => {
+		document.querySelector(`.tree-screen`).children[treeno].querySelector(`.grid > div:nth-of-type(${y + 1}) > div:nth-of-type(${x + 1})`).setAttribute("class", "cell-null")
+		update()
+	})
+	r.send(username + "\n" + treeno + "\n" + x + "\n" + y)
+}
+function destroyTree(treeno) {
+	var x = new XMLHttpRequest()
+	x.open("POST", "/destroy")
+	x.addEventListener("loadend", (e) => {
+		setTimeout(() => {
+			update()
+		}, 100)
+	})
+	x.send(username + "\n" + treeno)
+}
+;(function shopsetup() {
+	var x = new XMLHttpRequest()
+	x.open("GET", "/exchange")
+	x.addEventListener("loadend", (e) => {
+		var elms = JSON.parse(e.target.responseText)
+		for (var i = 0; i < elms.length; i++) {
+			((i) => {
+				var e = document.createElement("div")
+				e.appendChild(document.createElement("button"))
+				e.children[0].addEventListener("click", (e) => {
+					var x = new XMLHttpRequest()
+					x.open("POST", "/exchange")
+					x.addEventListener("loadend", (e) => {
+						setTimeout(() => {
+							update()
+						}, 100)
+					})
+					x.send(username + "\n" + i)
+				})
+				e.children[0].innerText = elms[i]
+				document.querySelector("#shop").appendChild(e)
+			})(i)
+		}
+	})
+	x.send()
+})();
+update()
+document.querySelector(".tab:first-child").click()
+		</script>
+	</body>
+</html>
