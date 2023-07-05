@@ -36,6 +36,7 @@
 .grid {
 	display: flex;
 	flex-direction: column;
+	font-size: 2em;
 }
 .grid > div {
 	display: flex;
@@ -78,10 +79,6 @@
 				<div>Inventory:</div>
 				<ul id="inventory"></ul>
 			</div>
-			<hr>
-			<div>Create a new plant:</div>
-			<div><button onclick="newPlant('apple-tree')">Apple tree (Cost: 1 wood)</button></div>
-			<div><button onclick="newPlant('berry-bush')">Berry bush (Cost: 1 leaf)</button></div>
 		</div>
 		<script>
 var username = decodeURIComponent(location.search.substr(1))
@@ -153,21 +150,36 @@ function updateTrees() {
 	x.addEventListener("loadend", (e) => {
 		var pd = JSON.parse(e.target.responseText)
 		document.querySelector("#money").innerText = "$" + pd.money
-		document.querySelectorAll(".tree-tab, .tree-screen").forEach((e) => e.remove())
-		for (var i = 0; i < pd.trees.length; i++) {
+		document.querySelectorAll(".tree-tab, .empty-tree-tab, .tree-screen").forEach((e) => e.remove())
+		var i = 0;
+		for (; i < pd.trees.length; i++) {
 			var e = document.createElement("div")
 			e.classList.add("tab")
 			e.classList.add("tree-tab")
 			e.setAttribute("onclick", `tab(this, 'tree${i}')`)
-			e.innerText = `${i + 1} - Tree`
+			e.innerText = `${i + 1} - ${pd.trees[i].name}`
 			document.querySelector(".tabs").appendChild(e)
 			var e = document.createElement("div")
 			e.classList.add("inactive")
 			e.classList.add("tree-screen")
 			e.dataset.tab = `tree${i}`
-			e.appendChild(buildTreeElement(i, pd.trees[i]))
+			e.appendChild(buildTreeElement(i, pd.trees[i].grid))
 			e.appendChild(document.createElement("div"))
 			e.children[1].innerHTML = `<button onclick="destroyTree(${i})">Destroy tree</button>`
+			document.body.appendChild(e)
+		}
+		for (; i < 4; i++) {
+			var e = document.createElement("div")
+			e.classList.add("tab")
+			e.classList.add("empty-tree-tab")
+			e.setAttribute("onclick", `tab(this, 'tree${i}')`)
+			e.innerText = `${i + 1} - Empty`
+			document.querySelector(".tabs").appendChild(e)
+			var e = document.createElement("div")
+			e.classList.add("inactive")
+			e.classList.add("tree-screen")
+			e.dataset.tab = `tree${i}`
+			e.innerHTML = `<div>Create a new plant:</div><div><button onclick="newPlant('apple-tree')">Apple tree (Cost: 1 wood)</button></div><div><button onclick="newPlant('berry-bush')">Berry bush (Cost: 1 berry)</button></div>`
 			document.body.appendChild(e)
 		}
 	})

@@ -59,11 +59,15 @@ class Player:
 class Tree:
 	def __init__(self, treeType):
 		self.type = treeType
-		self.grid = Grid(10, 10)
-		starter = read_json(f"tree_types/{self.type}.json")["start"]
-		self.grid.set_at([self.grid.get_width() // 2, self.grid.get_height() - 1], starter)
+		self.grid = Grid(15, 15)
+		tt = read_json(f"tree_types/{self.type}.json")
+		self.grid.set_at([self.grid.get_width() // 2, self.grid.get_height() - 1], tt["start"])
+		self.name = tt["name"]
 	def info(self):
-		return self.grid.g
+		return {
+			"name": self.name,
+			"grid": self.grid.g
+		}
 	def night(self):
 		cmds = read_json(f"tree_types/{self.type}.json")["night"]
 		executeCommandSet(self.grid, cmds)
@@ -274,6 +278,8 @@ def post(path: str, body: bytes) -> HttpResponse:
 		k=1)[0]
 		for p in players:
 			if p.name == bodydata[0]:
+				if len(p.trees) >= 4:
+					continue;
 				cost = "wood"
 				if bodydata[1] == "berry-bush": cost = "berry"
 				if cost not in p.inventory.keys(): continue;

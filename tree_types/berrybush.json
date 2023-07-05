@@ -1,5 +1,6 @@
 {
 	"start": "leaves",
+	"name": "Berry Bush",
 	"night": [
 		{"type": "repeat", "len": 2, "commands": [
 			{"type": "getblock", "block": "leaves"},

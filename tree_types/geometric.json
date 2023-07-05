@@ -1,5 +1,6 @@
 {
 	"start": "wood",
+	"name": "Tree",
 	"night": [
 		{"type": "repeat", "len": 3, "commands": [
 			{"type": "getblock", "block": "wood"},
