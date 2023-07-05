@@ -70,17 +70,18 @@
 		</div>
 		<div data-tab="Shop">
 			<div>You have <b id="money">$0</b></div>
-			<div><button onclick="night()">Night (Costs: 1 apple, <span id="nightcost">0</span> water)</button></div>
+			<div><button onclick="night()" id="nightbtn">Night (Costs: 1 apple, <span id="nightcost">0</span> water)</button></div>
 			<div>
 				<div>Inventory:</div>
 				<ul id="inventory"></ul>
 			</div>
-			<hr>
-			<div>Shop:</div>
-			<div id="shop"></div>
+			<!-- <hr>
+			<div>Create a new plant:</div>
+			<div>...</div> -->
 		</div>
 		<script>
 var username = decodeURIComponent(location.search.substr(1))
+var prices = {}
 function tab(e, n) {
 	document.querySelectorAll(`*[data-tab]`).forEach((e) => e.classList.add('inactive'))
 	document.querySelector(`*[data-tab="${n}"]`).classList.remove('inactive')
@@ -103,10 +104,42 @@ function update() {
 		document.querySelectorAll("#inventory > *").forEach((e) => e.remove())
 		var ikeys = Object.keys(pd.inventory)
 		for (var i = 0; i < ikeys.length; i++) {
-			var e = document.createElement("li")
-			e.innerText = `${ikeys[i]}: ${pd.inventory[ikeys[i]]}`
-			document.querySelector("#inventory").appendChild(e)
+			((i) => {
+				var e = document.createElement("li")
+				e.appendChild(document.createElement("span"))
+				e.children[0].innerText = `${ikeys[i]}: ${pd.inventory[ikeys[i]]} `
+				e.appendChild(document.createElement("button"))
+				e.children[1].innerText = `Sell for $${prices[ikeys[i]]}`
+				e.children[1].addEventListener("click", (v) => {
+					var x = new XMLHttpRequest()
+					x.open("POST", "/exchange")
+					x.addEventListener("loadend", (e) => {
+						setTimeout(() => {
+							update()
+						}, 100)
+					})
+					x.send(username + "\n" + ikeys[i] + "\n" + "-1")
+				})
+				if (pd.inventory[ikeys[i]] < 1) e.children[1].setAttribute("disabled", "true")
+				e.appendChild(document.createElement("button"))
+				e.children[2].innerText = `Buy for $${prices[ikeys[i]]}`
+					e.children[2].addEventListener("click", (v) => {
+					var x = new XMLHttpRequest()
+					x.open("POST", "/exchange")
+					x.addEventListener("loadend", (e) => {
+						setTimeout(() => {
+							update()
+						}, 100)
+					})
+					x.send(username + "\n" + ikeys[i] + "\n" + "1")
+				})
+				if (pd.money < prices[ikeys[i]]) e.children[2].setAttribute("disabled", "true")
+				document.querySelector("#inventory").appendChild(e)
+			})(i);
 		}
+		// Night button
+		if (pd.inventory["apple"] && pd.inventory["apple"] >= 1 && pd.inventory["water"] && pd.inventory["water"] >= pd.trees.length) document.querySelector("#nightbtn").removeAttribute("disabled")
+		else document.querySelector("#nightbtn").setAttribute("disabled", "true")
 	})
 	x.send()
 }
@@ -181,33 +214,15 @@ function destroyTree(treeno) {
 	})
 	x.send(username + "\n" + treeno)
 }
-;(function shopsetup() {
+;(() => {
 	var x = new XMLHttpRequest()
 	x.open("GET", "/exchange")
 	x.addEventListener("loadend", (e) => {
-		var elms = JSON.parse(e.target.responseText)
-		for (var i = 0; i < elms.length; i++) {
-			((i) => {
-				var e = document.createElement("div")
-				e.appendChild(document.createElement("button"))
-				e.children[0].addEventListener("click", (e) => {
-					var x = new XMLHttpRequest()
-					x.open("POST", "/exchange")
-					x.addEventListener("loadend", (e) => {
-						setTimeout(() => {
-							update()
-						}, 100)
-					})
-					x.send(username + "\n" + i)
-				})
-				e.children[0].innerText = elms[i]
-				document.querySelector("#shop").appendChild(e)
-			})(i)
-		}
+		window.prices = JSON.parse(e.target.responseText)
+		update()
 	})
 	x.send()
 })();
-update()
 document.querySelector(".tab:first-child").click()
 		</script>
 	</body>

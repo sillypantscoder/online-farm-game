@@ -47,9 +47,9 @@ class Player:
 			Tree("default")
 		]
 	def info(self):
-		for k in [*self.inventory.keys()]:
-			if self.inventory[k] <= 0:
-				del self.inventory[k]
+		# for k in [*self.inventory.keys()]:
+		# 	if self.inventory[k] <= 0:
+		# 		del self.inventory[k]
 		return json.dumps({
 			"money": self.money,
 			"inventory": self.inventory,
@@ -127,13 +127,13 @@ def executeCommandSet(grid: Grid, cmds, pos: tuple[int, int] | None = (0, 0)) ->
 players = [
 	Player("Jason")
 ]
-trades: list[tuple[int, str | None, str, int, str | None]] = [
-	(1, "leaves", "Sell 1 leaves for $1", 1, None),
-	(10, "leaves", "Sell 10 leaves for $10", 10, None),
-	(4, None, "Buy 1 water for $4", 1, "water"),
-	(2, None, "Buy 1 apple for $2", 1, "apple"),
-	(1, "wood", "Sell 1 wood for $4", 4, None)
-]
+prices = {
+	"wood": 4,
+	"leaves": 1,
+	"blossom": 1,
+	"apple": 2,
+	"water": 4
+}
 
 # SERVER
 
@@ -178,7 +178,7 @@ def get(path: str) -> HttpResponse:
 			"headers": {
 				"Content-Type": "text/json"
 			},
-			"content": json.dumps([x[2] for x in trades])
+			"content": json.dumps(prices)
 		}
 	else: # 404 page
 		return {
@@ -248,26 +248,13 @@ def post(path: str, body: bytes) -> HttpResponse:
 		bodydata = body.decode("UTF-8").split("\n")
 		for p in players:
 			if p.name == bodydata[0]:
-				exc = trades[int(bodydata[1])]
-				# Costs
-				if exc[1] == None:
-					if p.money < exc[0]:
-						continue;
-				else:
-					if exc[1] not in p.inventory.keys():
-						continue;
-					if p.inventory[exc[1]] < exc[0]:
-						continue;
+				cost = prices[bodydata[1]] * int(bodydata[2])
+				if p.money < cost:
+					continue;
 				# Trade
-				if exc[1] == None:
-					p.money -= exc[0]
-				else:
-					p.inventory[exc[1]] -= exc[0]
-				if exc[4] == None:
-					p.money += exc[3]
-				else:
-					if exc[4] not in p.inventory.keys(): p.inventory[exc[4]] = 0
-					p.inventory[exc[4]] += exc[3]
+				p.money -= cost
+				if bodydata[1] not in p.inventory.keys(): p.inventory[bodydata[1]] = 0
+				p.inventory[bodydata[1]] += int(bodydata[2])
 		return {
 			"status": 200,
 			"headers": {},
