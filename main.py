@@ -270,7 +270,7 @@ def post(path: str, body: bytes) -> HttpResponse:
 		treetype = "default"
 		if bodydata[1] == "apple-tree": treetype = random.choices(
 					["default", "geometric"],
-			weights=[1        , 10         ],
+			weights=[3        , 1          ],
 		k=1)[0]
 		elif bodydata[1] == "berry-bush": treetype = random.choices(
 					["berrybush"],

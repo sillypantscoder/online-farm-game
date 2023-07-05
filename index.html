@@ -2,6 +2,34 @@
 <html>
 	<head>
 		<style>
+@media screen and not (any-pointer: fine) {
+	html {
+		font-size: 2em;
+	}
+	.tabs {
+		font-size: 0.7em;
+	}
+	button.clicked {
+		background-color: red;
+	}
+	button:not(.clicked) {
+		background-color: #efefef;
+		transition: background-color 1s;
+	}
+}
+button {
+	font-size: 1em;
+	border: 2px solid #AAA;
+	border-radius: 0.4em;
+	border-style: outset;
+}
+button:active {
+	border-style: inset;
+}
+button[disabled] {
+	background: #fafafa !important;
+}
+
 .inactive[data-tab] {
 	display: none;
 }
@@ -68,7 +96,7 @@
 }
 		</style>
 	</head>
-	<body>
+	<body ontouchend="event.preventDefault(); event.stopPropagation(); event.target.click(); event.target.classList.add('clicked'); requestAnimationFrame(function () { event.target.classList.remove('clicked'); });">
 		<div class="tabs">
 			<div class="tab" onclick="tab(this, this.innerText)">Shop</div>
 		</div>
